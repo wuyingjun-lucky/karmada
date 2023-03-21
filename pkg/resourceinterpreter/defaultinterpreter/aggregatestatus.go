@@ -362,6 +362,7 @@ func aggregatePodStatus(object *unstructured.Unstructured, aggregatedStatusItems
 
 	newStatus := &corev1.PodStatus{}
 	newStatus.ContainerStatuses = make([]corev1.ContainerStatus, 0)
+	newStatus.Conditions = make([]corev1.PodCondition, 0)
 	podPhases := sets.NewString()
 	for _, item := range aggregatedStatusItems {
 		if item.Status == nil {
@@ -385,6 +386,19 @@ func aggregatePodStatus(object *unstructured.Unstructured, aggregatedStatusItems
 			}
 			newStatus.ContainerStatuses = append(newStatus.ContainerStatuses, tempStatus)
 		}
+
+		for _, condition := range temp.Conditions {
+			tempCondition := corev1.PodCondition{
+				Type:               condition.Type,
+				Status:             condition.Status,
+				LastProbeTime:      condition.LastProbeTime,
+				LastTransitionTime: condition.LastTransitionTime,
+				Reason:             condition.Reason,
+				Message:            condition.Message,
+			}
+			newStatus.Conditions = append(newStatus.Conditions, tempCondition)
+		}
+
 		klog.V(3).Infof("Grab pod(%s/%s) status from cluster(%s), phase: %s", pod.Namespace,
 			pod.Name, item.ClusterName, temp.Phase)
 	}
